@@ -1,3 +1,14 @@
+/*  Author: Ben Agnes
+    Student ID: 301277322
+    email: bagnes@sfu.ca
+
+    Runs an RLC circuit with user specified inputs
+    - displays GUI for user to configure circuit parameters
+    - writes capacitor charge values over time to log file
+    - creates, displays, and saves graph of capacitor charge values
+
+*/
+
 package Main;
 
 import java.awt.*;
@@ -5,12 +16,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import javax.swing.*;
 
 public class RLC_Circuit extends JFrame implements ActionListener{
-
+    // GUI parameters
     private JLabel labelFilepath = new JLabel("Enter directory to save file in (leave blank for cwd): ");
     private JLabel labelFilename = new JLabel("Enter file name: ");
     private JLabel labelVoltage = new JLabel("Enter Voltage: ");
@@ -29,7 +39,7 @@ public class RLC_Circuit extends JFrame implements ActionListener{
     private JTextField textStepTime = new JTextField(20);
     private JButton runButton = new JButton("RUN");
 
-    // Variables to save input parameters to
+    // Variables for GUI inputs
     private double Voltage;
     private double Capacitance;
     private double Inductance;
@@ -39,9 +49,8 @@ public class RLC_Circuit extends JFrame implements ActionListener{
     private String filepath;
     private String filename;
 
-    // file parameters
-    private File myfile;
-    private FileWriter myWriter;
+    // File parameters
+    FileWriter logFileWriter;
     private String fullFilePath;
 
     // Class constructor. Creates and displays GUI for user to enter parameters
@@ -118,7 +127,7 @@ public class RLC_Circuit extends JFrame implements ActionListener{
         constraints.gridx = 1;
         newPanel.add(textStepTime, constraints);
 
-        // add RUN button
+        // add RUN button, runs circuit when user clicks button
         constraints.gridx = 0;
         constraints.gridy = 9;
         constraints.gridwidth = 2;
@@ -155,9 +164,10 @@ public class RLC_Circuit extends JFrame implements ActionListener{
             else {
                 fullFilePath = filepath + "/" + filename;
             }
-            String logFile = fullFilePath + ".log";
-            myfile = new File(logFile);
-            myWriter = new FileWriter(myfile);
+
+            String logFileName = fullFilePath + ".log";
+            File logFile = new File(logFileName);
+            logFileWriter = new FileWriter(logFile);
 
             if ((Voltage < 4) || (Voltage > 15)) {
                 throw new Exception("Invalid voltage range: 4 <= V <= 15");
@@ -184,10 +194,7 @@ public class RLC_Circuit extends JFrame implements ActionListener{
             }
         }
         catch (Exception exception) {
-            JOptionPane.showMessageDialog(null,
-                    exception.getMessage(),
-                    "Invalid Input",
-                    JOptionPane.WARNING_MESSAGE);
+            displayExceptionasMsg("Invalid Input", exception.getMessage());
             return;
         }
 
@@ -195,52 +202,56 @@ public class RLC_Circuit extends JFrame implements ActionListener{
                 runCircuit();
         }
         catch (Exception exception) {
-            JOptionPane.showMessageDialog(null,
-                    exception.getMessage(),
-                    "AN ERROR OCCURRED",
-                    JOptionPane.WARNING_MESSAGE);
+            displayExceptionasMsg("ERROR", exception.getMessage());
         }
     }
 
     // Runs Circuit with initial conditions; dumps q(t) values to log file and makes graph
-    public void runCircuit() throws Exception {
+    private void runCircuit() throws Exception {
 
         double Charge;
         double currentTime = 0;
         ArrayList<Double> timeVals = new ArrayList<>();
         ArrayList<Double> chargeVals = new ArrayList<>();
 
-        myWriter.write("Initial Conditions\r\n");
-        myWriter.write("Run time: " + runTime + " seconds\r\n");
-        myWriter.write("Step time: " + stepTime + " seconds\r\n");
-        myWriter.write("Voltage: " + Voltage + " volts\r\n");
-        myWriter.write("Capacitance: " + Capacitance + " farads\r\n");
-        myWriter.write("Inductance: " + Inductance + " henrys\r\n");
-        myWriter.write("Resistance: " + Resistance + " ohms\r\n\r\n");
-        myWriter.write("Charge q(t) = X at t seconds in C (Coulombs)\r\n");
+        logFileWriter.write("RLC Circuit Initial Conditions\r\n");
+        logFileWriter.write("Run time: " + runTime + " seconds\r\n");
+        logFileWriter.write("Step time: " + stepTime + " seconds\r\n");
+        logFileWriter.write("Voltage: " + Voltage + " volts\r\n");
+        logFileWriter.write("Capacitance: " + Capacitance + " farads\r\n");
+        logFileWriter.write("Inductance: " + Inductance + " henrys\r\n");
+        logFileWriter.write("Resistance: " + Resistance + " ohms\r\n\r\n");
+        logFileWriter.write("Charge q(t) = X at t seconds in C (Coulombs)\r\n");
 
         // Run circuit and write q(t) to log file
         while (currentTime <= runTime) {
             Charge = Voltage * Capacitance * Math.exp(-1 * (Resistance / (2 * Inductance)) * currentTime)
-                    * Math.cos(currentTime * Math.sqrt((1 / (Inductance * Capacitance)) - Math.pow((Resistance / (2 * Inductance)), 2)));
-            try {
-                myWriter.write("q(" + currentTime + ") = " + Charge + " C\r\n");
-            } catch (IOException e) {
-                System.out.println("An error occurred.");
-                e.printStackTrace();
-                System.exit(1);
-            }
+                    * Math.cos(currentTime * Math.sqrt((1 / (Inductance * Capacitance)) -
+                    Math.pow((Resistance / (2 * Inductance)), 2)));
+
+            logFileWriter.write("q(" + currentTime + ") = " + Charge + " C\r\n");
+
             timeVals.add(currentTime);
             chargeVals.add(Charge);
+
+            if (currentTime == runTime) {
+                break;
+            }
+
             currentTime += stepTime;
+
+            // if next iteration exceeds run time, make next iteration end run time
+            if (currentTime > runTime) {
+                currentTime = runTime;
+            }
         }
 
-        myWriter.close();
-        // Make graph
+        logFileWriter.close();
+
         DrawGraph graph = new DrawGraph(timeVals, chargeVals, fullFilePath);
     }
 
-    public static void main(String[] args) {
-        RLC_Circuit myCircuit = new RLC_Circuit();
+    private void displayExceptionasMsg(String title, String message) {
+        JOptionPane.showMessageDialog(null, message, title, JOptionPane.WARNING_MESSAGE);
     }
 }

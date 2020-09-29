@@ -1,3 +1,12 @@
+/*  Author: Ben Agnes
+    Student ID: 301277322
+    email: bagnes@sfu.ca
+
+    Creates, displays, and saves a graph with given inputs
+    - graphs capacitor charge, q(t), versus time
+    - saves graph as PNG
+*/
+
 package Main;
 
 import java.awt.*;
@@ -31,8 +40,9 @@ public class DrawGraph extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setVisible(true);
-        // save graph as PNG image
-        String fileName = fullFilePath + ".png";
+
+        // save graph as PNG
+        String fileName = fullFilePath + "_Graph.png";
         ChartUtilities.saveChartAsPNG(new File(fileName), chart, chartPanel.getWidth(), chartPanel.getHeight());
     }
 
@@ -49,8 +59,9 @@ public class DrawGraph extends JFrame {
 
     // Creates Graph with XYDataset input
     private JFreeChart createGraph(XYDataset dataset) {
-        JFreeChart chart = ChartFactory.createXYLineChart("Charge q(t) vs time (seconds)", "time (seconds)",
-                "q(t) (Coulombs)", dataset, PlotOrientation.VERTICAL, false, true, false);
+        JFreeChart chart = ChartFactory.createXYLineChart("Charge q(t) vs time (seconds)",
+                "time (seconds)","q(t) (Coulombs)", dataset,
+                PlotOrientation.VERTICAL, false, true, false);
 
         XYPlot plot = chart.getXYPlot();
 
